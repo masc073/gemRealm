@@ -38,6 +38,9 @@ public class GemRealm<E> extends AppservRealm {
     public static final String LOGIN_GOOGLE_SQL_QUERY = "login-google-sql-query";
     public static final String JTA_DATA_SOURCE = "jta-data-source";
     public static final String HASH_ALGORITHM = "hash-algorithm";
+    public static final String CAMPIGEM = "campigem";
+    public static final String DOMINIOSINSTITUNCIONAIS = "dominiosInstituncionais";
+    public static final String DOMINIOSALUNOS = "dominiosAluno";
     public static final String CHARSET = "charset";
     private static Enumeration<?> all_properties;
     private static List<String> dominios; 
@@ -114,6 +117,18 @@ public class GemRealm<E> extends AppservRealm {
     public String getLoginGoogleQuery() {
     	return super.getProperty(LOGIN_GOOGLE_SQL_QUERY);
     }
+    
+    public String getCampiGem() {
+    	return super.getProperty(CAMPIGEM);
+    }
+    
+    public String getDominiosInstituncionais() {
+    	return super.getProperty(DOMINIOSINSTITUNCIONAIS);
+    }
+    
+    public String getDominiosAluno() {
+    	return super.getProperty(DOMINIOSALUNOS);
+    }
 
     @Override
     public synchronized void init(Properties properties) throws BadRealmException, NoSuchRealmException {
@@ -124,15 +139,46 @@ public class GemRealm<E> extends AppservRealm {
         setProperty(HASH_ALGORITHM, properties.getProperty(HASH_ALGORITHM));
         setProperty(CHARSET, properties.getProperty(CHARSET));
         setProperty(LOGIN_GOOGLE_SQL_QUERY, properties.getProperty(LOGIN_GOOGLE_SQL_QUERY));
+        setProperty(CAMPIGEM, properties.getProperty(CAMPIGEM));
+        setProperty(DOMINIOSINSTITUNCIONAIS, properties.getProperty(DOMINIOSINSTITUNCIONAIS));
+        setProperty(DOMINIOSALUNOS, properties.getProperty(DOMINIOSALUNOS));
         
-        all_properties = properties.keys();
+//        all_properties = properties.keys();
+//        dominios = new ArrayList<String>();
+//        while(all_properties.hasMoreElements()) {
+//        	String key = (String)all_properties.nextElement();
+//        	if(key.substring(0, 7).equals("dominio")) {
+//        		dominios.add((String)properties.getProperty(key));
+//        	}
+//        }
         dominios = new ArrayList<String>();
-        while(all_properties.hasMoreElements()) {
-        	String key = (String)all_properties.nextElement();
-        	if(key.substring(0, 7).equals("dominio")) {
-        		dominios.add((String)properties.getProperty(key));
-        	}
-        }
+        
+        int inicio = 0;
+		int fim = 0;
+		String dominiosInstituncionais = getDominiosInstituncionais();
+		for (int i=0; i<dominiosInstituncionais.length(); i++) {
+			char c = dominiosInstituncionais.charAt(i);
+			if(c == ';') {
+				fim = i;
+				dominios.add(dominiosInstituncionais.substring(inicio, fim));
+				inicio = i+1;
+			}
+		}
+		inicio = 0;
+		fim = 0;
+		String dominiosAluno = getDominiosAluno();
+		for (int i=0; i<dominiosAluno.length(); i++) {
+			char c = dominiosAluno.charAt(i);
+			if(c == ';') {
+				fim = i;
+				dominios.add(dominiosAluno.substring(inicio, fim));
+				inicio = i+1;
+			}
+		}
+		_logger.info("Dominios Registrados....:");
+		for (String string : dominios) {
+			_logger.info(string);
+		}
     }
 
     @Override
@@ -142,7 +188,7 @@ public class GemRealm<E> extends AppservRealm {
 
     @Override
     public String getJAASContext() {
-        return "saltRealm";
+        return "gemRealm";
     }
 
     public boolean authenticateUser(String username, String password) {
