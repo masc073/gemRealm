@@ -40,7 +40,6 @@ public class GemLoginModule extends AppservPasswordLoginModule {
         } else {
             throw new LoginException("Invalid login!");
         }
-
     }
 
 }
