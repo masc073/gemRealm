@@ -16,8 +16,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
-import java.util.logging.Level;
-
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import org.glassfish.hk2.api.ActiveDescriptor;
@@ -32,39 +30,27 @@ public class GemRealm<E> extends AppservRealm {
 
 	public static final String GROUPS_SQL_QUERY = "groups-sql-query";
 	public static final String JTA_DATA_SOURCE = "jta-data-source";
-	public static final String HASH_ALGORITHM = "hash-algorithm";
 	public static final String DOMINIOSINSTITUNCIONAIS = "dominiosInstituncionais";
 	public static final String DOMINIOSALUNOS = "dominiosAluno";
-	public static final String CHARSET = "charset";
 	private static List<String> dominios; 
 
 	private static DataSource dataSource;
-
+	
+	@SuppressWarnings("unchecked")
 	private Connection getConnection() {
 		try {
 			synchronized (this) {
 				if (dataSource == null) {
-					_logger.setLevel(Level.WARNING);
-					_logger.info("*** Lendo dataSource ***");
-					@SuppressWarnings("unchecked")
 					ActiveDescriptor<ConnectorRuntime> cr = (ActiveDescriptor<ConnectorRuntime>) Util.getDefaultHabitat().getBestDescriptor(BuilderHelper.createContractFilter(ConnectorRuntime.class.getName()));
 					ConnectorRuntime connectorRuntime = Util.getDefaultHabitat().getServiceHandle(cr).getService();
 					dataSource = (DataSource) connectorRuntime.lookupNonTxResource(getJtaDataSource(), false);
-					if (dataSource != null) {
-						_logger.info("*** Datasource lido com sucesso ***");
-					} else {
-						_logger.info("*** Problema na leitura do datasource ***");
-					}
 				}
 			}
 
-			_logger.info("*** recuperando conexão ***");
 			return dataSource.getConnection();
 		} catch (NamingException | SQLException ex) {
-			_logger.info("*** erro na recuperação da conexão ***");
 			throw new GemRealmException(ex);
 		} catch (Exception ex) {
-			_logger.info("*** erro inesperado ***");
 			throw new GemRealmException(ex);
 		}
 	}
@@ -85,14 +71,6 @@ public class GemRealm<E> extends AppservRealm {
 		} catch (SQLException ex) {
 			throw new GemRealmException(ex);
 		}
-	}
-
-	public String getCharset() {
-		return super.getProperty(CHARSET);
-	}
-
-	public String getHashAlgorithm() {
-		return super.getProperty(HASH_ALGORITHM);
 	}
 
 	public String getJtaDataSource() {
@@ -116,8 +94,6 @@ public class GemRealm<E> extends AppservRealm {
 		setProperty(JAAS_CONTEXT_PARAM, properties.getProperty(JAAS_CONTEXT_PARAM));
 		setProperty(GROUPS_SQL_QUERY, properties.getProperty(GROUPS_SQL_QUERY));
 		setProperty(JTA_DATA_SOURCE, properties.getProperty(JTA_DATA_SOURCE));
-		setProperty(HASH_ALGORITHM, properties.getProperty(HASH_ALGORITHM));
-		setProperty(CHARSET, properties.getProperty(CHARSET));
 		setProperty(DOMINIOSINSTITUNCIONAIS, properties.getProperty(DOMINIOSINSTITUNCIONAIS));
 		setProperty(DOMINIOSALUNOS, properties.getProperty(DOMINIOSALUNOS));
 
@@ -145,7 +121,7 @@ public class GemRealm<E> extends AppservRealm {
 				inicio = i+1;
 			}
 		}
-		_logger.info("Dominios Registrados....:");
+		
 		for (String string : dominios) {
 			_logger.info(string);
 		}
@@ -164,18 +140,15 @@ public class GemRealm<E> extends AppservRealm {
 	public boolean authenticateUser(String username, String password) {
 		boolean result = false;
 
-		_logger.info("*** email do usuario:" + username + " ***");
-
 		if(!result) {
 			for (String dominio : dominios) {
-				_logger.info(dominio);
 				if(username.substring(username.indexOf("@")).equals("@" + dominio)){
 					result = true;
 					break;
 				}
 			}
 		}
-		_logger.info("*** retornando resultado:" + result + " ***");
+
 		return result;
 	}
 
@@ -196,20 +169,15 @@ public class GemRealm<E> extends AppservRealm {
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
 		List<String> groups = new ArrayList<>();
-		_logger.info("recuperando grupos de " + username);
 
 		try {
-			_logger.info("grupos: recuperando conexão...");
 			conn = getConnection();
-			_logger.info("conexão recuperada!");
 			stmt = conn.prepareStatement(getGroupsQuery());
 			stmt.setString(1, username);
-			_logger.info("executando query: " + getGroupsQuery());
 			rs = stmt.executeQuery();
 
 			while (rs.next()) {
 				String group = rs.getString(1);
-				_logger.info("grupo: " + group);
 				groups.add(group);
 			}
 		} catch (SQLException ex) {
@@ -218,7 +186,6 @@ public class GemRealm<E> extends AppservRealm {
 			close(rs, stmt, conn);
 		}
 
-		_logger.info("retornando lista de grupos");
 		return groups;
 	}
 
